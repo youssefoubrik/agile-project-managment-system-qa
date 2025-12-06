@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>
 		4.0.0
 	</modelVersion>
@@ -48,6 +50,8 @@
 		<java.version>
 			17
 		</java.version>
+		<!-- SonarQube Coverage Path -->
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -255,6 +259,39 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+
+			<!-- JaCoCo plugin to produce XML report that SonarQube can consume -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.10</version>
+				<executions>
+					<!-- prepares the agent and creates the exec file during tests -->
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<!-- generate XML report for SonarQube on verify phase -->
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<!-- place XML in target/site/jacoco or target/jacoco -->
+							<outputDirectory>${project.build.directory}/jacoco</outputDirectory>
+							<!-- produce XML (used by SonarQube) and HTML -->
+							<formats>
+								<format>XML</format>
+								<format>HTML</format>
+							</formats>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<artifactId>
 					maven-surefire-plugin
@@ -282,6 +319,12 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<!-- SonarQube Maven Plugin to send analysis results -->
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>3.10.0.2594</version>
 			</plugin>
 		</plugins>
 	</build>
