@@ -5,6 +5,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -64,131 +68,41 @@ class EnumValidatorTest {
         validator.initialize(annotation);
     }
 
-    @Test
-    @DisplayName("isValid should return true for valid enum value")
-    void isValid_WithValidEnumValue_ShouldReturnTrue() {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "VALUE_ONE",
+            "value_one",
+            "VALUE_TWO",
+            "value_three",
+            "VaLuE_OnE"
+    })
+    @DisplayName("isValid should return true for valid enum values with different cases")
+    void isValid_WithValidEnumValueDifferentCases_ShouldReturnTrue(String value) {
         // Given
         initializeValidator();
 
         // When
-        boolean result = validator.isValid("VALUE_ONE", context);
+        boolean result = validator.isValid(value, context);
 
         // Then
         assertThat(result).isTrue();
     }
 
-    @Test
-    @DisplayName("isValid should return true for valid enum value with different case")
-    void isValid_WithValidEnumValueDifferentCase_ShouldReturnTrue() {
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    @ValueSource(strings = {
+            "INVALID_VALUE",
+            "   ",
+            "VALUE"
+    })
+    @DisplayName("isValid should return false for invalid enum values")
+    void isValid_WithInvalidEnumValues_ShouldReturnFalse(String value) {
         // Given
         initializeValidator();
 
         // When
-        boolean result = validator.isValid("value_one", context);
-
-        // Then
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("isValid should return true for valid enum value in uppercase")
-    void isValid_WithValidEnumValueUpperCase_ShouldReturnTrue() {
-        // Given
-        initializeValidator();
-
-        // When
-        boolean result = validator.isValid("VALUE_TWO", context);
-
-        // Then
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("isValid should return true for valid enum value in lowercase")
-    void isValid_WithValidEnumValueLowerCase_ShouldReturnTrue() {
-        // Given
-        initializeValidator();
-
-        // When
-        boolean result = validator.isValid("value_three", context);
-
-        // Then
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("isValid should return true for valid enum value in mixed case")
-    void isValid_WithValidEnumValueMixedCase_ShouldReturnTrue() {
-        // Given
-        initializeValidator();
-
-        // When
-        boolean result = validator.isValid("VaLuE_OnE", context);
-
-        // Then
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("isValid should return false for invalid enum value")
-    void isValid_WithInvalidEnumValue_ShouldReturnFalse() {
-        // Given
-        initializeValidator();
-
-        // When
-        boolean result = validator.isValid("INVALID_VALUE", context);
-
-        // Then
-        assertThat(result).isFalse();
-    }
-
-    @Test
-    @DisplayName("isValid should return false for null value")
-    void isValid_WithNullValue_ShouldReturnFalse() {
-        // Given
-        initializeValidator();
-
-        // When
-        boolean result = validator.isValid(null, context);
-
-        // Then
-        assertThat(result).isFalse();
-    }
-
-    @Test
-    @DisplayName("isValid should return false for empty string")
-    void isValid_WithEmptyString_ShouldReturnFalse() {
-        // Given
-        initializeValidator();
-
-        // When
-        boolean result = validator.isValid("", context);
-
-        // Then
-        assertThat(result).isFalse();
-    }
-
-    @Test
-    @DisplayName("isValid should return false for blank string")
-    void isValid_WithBlankString_ShouldReturnFalse() {
-        // Given
-        initializeValidator();
-
-        // When
-        boolean result = validator.isValid("   ", context);
-
-        // Then
-        assertThat(result).isFalse();
-    }
-
-    @Test
-    @DisplayName("isValid should return false for partial enum value match")
-    void isValid_WithPartialEnumValueMatch_ShouldReturnFalse() {
-        // Given
-        initializeValidator();
-
-        // When
-        boolean result = validator.isValid("VALUE", context);
+        boolean result = validator.isValid(value, context);
 
         // Then
         assertThat(result).isFalse();
