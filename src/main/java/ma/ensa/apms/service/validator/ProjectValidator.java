@@ -18,7 +18,7 @@ public class ProjectValidator {
      * Validate that start date is before end date
      *
      * @param startDate the start date to validate
-     * @param endDate the end date to compare with
+     * @param endDate   the end date to compare with
      * @throws BusinessException if start date is not before end date
      */
     public void validateStartDate(LocalDateTime startDate, LocalDateTime endDate) {
@@ -31,7 +31,7 @@ public class ProjectValidator {
      * Validate that end date is after start date
      *
      * @param startDate the start date to compare with
-     * @param endDate the end date to validate
+     * @param endDate   the end date to validate
      * @throws BusinessException if end date is not after start date
      */
     public void validateEndDate(LocalDateTime startDate, LocalDateTime endDate) {

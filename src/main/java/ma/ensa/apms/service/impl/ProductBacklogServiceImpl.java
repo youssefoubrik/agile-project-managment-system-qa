@@ -2,7 +2,6 @@ package ma.ensa.apms.service.impl;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -15,7 +14,6 @@ import ma.ensa.apms.dto.Response.EpicResponse;
 import ma.ensa.apms.dto.Response.ProductBacklogResponse;
 import ma.ensa.apms.dto.Response.ProjectResponse;
 import ma.ensa.apms.dto.Response.UserStoryResponse;
-import ma.ensa.apms.exception.ResourceNotFoundException;
 import ma.ensa.apms.mapper.EpicMapper;
 import ma.ensa.apms.mapper.ProductBacklogMapper;
 import ma.ensa.apms.mapper.ProjectMapper;
@@ -26,22 +24,24 @@ import ma.ensa.apms.modal.Project;
 import ma.ensa.apms.modal.UserStory;
 import ma.ensa.apms.repository.EpicRepository;
 import ma.ensa.apms.repository.ProductBacklogRepository;
-// import ma.ensa.apms.repository.ProjectRepository;
 import ma.ensa.apms.repository.UserStoryRepository;
 import ma.ensa.apms.service.ProductBacklogService;
+import ma.ensa.apms.service.helper.ProductBacklogRepositoryHelper;
+import ma.ensa.apms.service.validator.ProductBacklogValidator;
 
 @Service
 @RequiredArgsConstructor
 public class ProductBacklogServiceImpl implements ProductBacklogService {
 
     private final UserStoryRepository userStoryRepository;
-    // private final ProjectRepository projectRepository;
     private final UserStoryMapper userStoryMapper;
     private final ProductBacklogRepository productBacklogRepository;
     private final ProductBacklogMapper productBacklogMapper;
     private final EpicMapper epicMapper;
     private final EpicRepository epicRepository;
     private final ProjectMapper projectMapper;
+    private final ProductBacklogRepositoryHelper productBacklogRepositoryHelper;
+    private final ProductBacklogValidator productBacklogValidator;
 
     @Override
     @Transactional
@@ -53,22 +53,16 @@ public class ProductBacklogServiceImpl implements ProductBacklogService {
 
     @Override
     public ProductBacklogResponse getProductBacklogById(UUID id) {
-        ProductBacklog pb = productBacklogRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("backlog not found"));
-
+        ProductBacklog pb = productBacklogRepositoryHelper.findByIdOrThrow(id);
         ProductBacklogResponse response = productBacklogMapper.toResponse(pb);
-
         setCounts(response, pb);
-
         return response;
     }
 
     @Override
     @Transactional
     public void deleteProductBacklog(UUID productBacklogId) {
-        if (!productBacklogRepository.existsById(productBacklogId)) {
-            throw new ResourceNotFoundException("Product backlog with ID " + productBacklogId + " does not exist");
-        }
+        productBacklogRepositoryHelper.validateExists(productBacklogId);
         productBacklogRepository.deleteById(productBacklogId);
     }
 
@@ -76,31 +70,25 @@ public class ProductBacklogServiceImpl implements ProductBacklogService {
     public List<ProductBacklogResponse> getAllProductBacklogs() {
         return productBacklogRepository.findAll().stream()
                 .map(productBacklogMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional
     public List<UserStoryResponse> getUserStoriesByProductBacklogId(UUID productBacklogId) {
-
-        if (!productBacklogRepository.existsById(productBacklogId)) {
-            throw new ResourceNotFoundException("Product backlog not found");
-        }
-
+        productBacklogRepositoryHelper.validateExists(productBacklogId);
         return userStoryRepository.findByProductBacklogId(productBacklogId).stream()
                 .map(userStoryMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional
     public List<EpicResponse> getEpicsByProductBacklogId(UUID productBacklogId) {
-        ProductBacklog productBacklog = productBacklogRepository.findById(productBacklogId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product backlog not found"));
-
+        ProductBacklog productBacklog = productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId);
         return productBacklog.getEpics().stream()
                 .map(epicMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void setCounts(ProductBacklogResponse response, ProductBacklog pb) {
@@ -111,8 +99,7 @@ public class ProductBacklogServiceImpl implements ProductBacklogService {
     @Override
     @Transactional
     public EpicResponse addEpicToProductBacklog(UUID productBacklogId, EpicRequest epicRequest) {
-        ProductBacklog productBacklog = productBacklogRepository.findById(productBacklogId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product backlog not found"));
+        ProductBacklog productBacklog = productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId);
 
         Epic epic = epicMapper.toEntity(epicRequest);
         epic.setProductBacklog(productBacklog);
@@ -126,8 +113,7 @@ public class ProductBacklogServiceImpl implements ProductBacklogService {
     @Override
     @Transactional
     public UserStoryResponse addUserStoryToProductBacklog(UUID productBacklogId, UserStoryRequest userStoryRequest) {
-        ProductBacklog productBacklog = productBacklogRepository.findById(productBacklogId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product backlog not found"));
+        ProductBacklog productBacklog = productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId);
 
         UserStory userStory = userStoryMapper.toEntity(userStoryRequest);
         userStory.setProductBacklog(productBacklog);
@@ -140,14 +126,10 @@ public class ProductBacklogServiceImpl implements ProductBacklogService {
     @Override
     @Transactional
     public ProjectResponse getProjectByProductBacklogId(UUID productBacklogId) {
-        ProductBacklog productBacklog = productBacklogRepository.findById(productBacklogId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product backlog not found"));
+        ProductBacklog productBacklog = productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId);
+        productBacklogValidator.validateHasProject(productBacklog);
 
         Project project = productBacklog.getProject();
-        if (project == null) {
-            throw new ResourceNotFoundException("No project associated with this product backlog");
-        }
-
         return projectMapper.toResponse(project);
     }
 

@@ -114,7 +114,8 @@ class ProjectServiceImplTest {
     @Test
     void updateProject_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
-        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
+        when(projectRepositoryHelper.findByIdOrThrow(testId))
+                .thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.updateProject(testId, testRequest));
@@ -164,7 +165,8 @@ class ProjectServiceImplTest {
     void updateProjectStartDate_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
         LocalDateTime newStartDate = LocalDateTime.now();
-        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
+        when(projectRepositoryHelper.findByIdOrThrow(testId))
+                .thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.updateProjectStartDate(testId, newStartDate));
@@ -204,7 +206,8 @@ class ProjectServiceImplTest {
     void updateProjectEndDate_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
         LocalDateTime newEndDate = LocalDateTime.now().plusMonths(6);
-        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
+        when(projectRepositoryHelper.findByIdOrThrow(testId))
+                .thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.updateProjectEndDate(testId, newEndDate));
@@ -231,7 +234,8 @@ class ProjectServiceImplTest {
     void updateProjectStatus_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
         ProjectStatus newStatus = ProjectStatus.COMPLETED;
-        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
+        when(projectRepositoryHelper.findByIdOrThrow(testId))
+                .thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.updateProjectStatus(testId, newStatus));
@@ -255,7 +259,8 @@ class ProjectServiceImplTest {
     @Test
     void getProject_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
-        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
+        when(projectRepositoryHelper.findByIdOrThrow(testId))
+                .thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.getProject(testId));
@@ -343,7 +348,8 @@ class ProjectServiceImplTest {
     void assignProductBacklogToProject_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
         UUID productBacklogId = UUID.randomUUID();
-        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
+        when(projectRepositoryHelper.findByIdOrThrow(testId))
+                .thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class,

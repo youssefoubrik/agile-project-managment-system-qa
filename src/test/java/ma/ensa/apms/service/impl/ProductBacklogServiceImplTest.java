@@ -58,6 +58,12 @@ class ProductBacklogServiceImplTest {
         private EpicMapper epicMapper;
 
         @Mock
+        private ma.ensa.apms.service.helper.ProductBacklogRepositoryHelper productBacklogRepositoryHelper;
+
+        @Mock
+        private ma.ensa.apms.service.validator.ProductBacklogValidator productBacklogValidator;
+
+        @Mock
         private ProjectMapper projectMapper;
 
         private UUID productBacklogId;
@@ -98,18 +104,18 @@ class ProductBacklogServiceImplTest {
                                 .name("Test Backlog")
                                 .build();
 
-                when(productBacklogRepository.findById(productBacklogId)).thenReturn(Optional.of(productBacklog));
+                when(productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId)).thenReturn(productBacklog);
                 when(productBacklogMapper.toResponse(productBacklog)).thenReturn(response);
 
                 ProductBacklogResponse result = productBacklogService.getProductBacklogById(productBacklogId);
 
                 assertNotNull(result);
-                verify(productBacklogRepository).findById(productBacklogId);
+                verify(productBacklogRepositoryHelper).findByIdOrThrow(productBacklogId);
         }
 
         @Test
         void testGetProductBacklogById_NotFound() {
-                when(productBacklogRepository.findById(productBacklogId)).thenReturn(Optional.empty());
+                when(productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId)).thenThrow(new ResourceNotFoundException("Product backlog not found"));
 
                 assertThrows(ResourceNotFoundException.class,
                                 () -> productBacklogService.getProductBacklogById(productBacklogId));
@@ -117,7 +123,7 @@ class ProductBacklogServiceImplTest {
 
         @Test
         void testDeleteProductBacklog() {
-                when(productBacklogRepository.existsById(productBacklogId)).thenReturn(true);
+                doNothing().when(productBacklogRepositoryHelper).validateExists(productBacklogId);
 
                 productBacklogService.deleteProductBacklog(productBacklogId);
 
@@ -126,7 +132,7 @@ class ProductBacklogServiceImplTest {
 
         @Test
         void testDeleteProductBacklog_NotFound() {
-                when(productBacklogRepository.existsById(productBacklogId)).thenReturn(false);
+                doThrow(new ResourceNotFoundException("Product backlog not found")).when(productBacklogRepositoryHelper).validateExists(productBacklogId);
 
                 assertThrows(ResourceNotFoundException.class,
                                 () -> productBacklogService.deleteProductBacklog(productBacklogId));
@@ -170,7 +176,7 @@ class ProductBacklogServiceImplTest {
                 // Initialize the epics list in the product backlog as mutable
                 productBacklog.setEpics(new ArrayList<>());
 
-                when(productBacklogRepository.findById(productBacklogId)).thenReturn(Optional.of(productBacklog));
+                when(productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId)).thenReturn(productBacklog);
                 when(epicMapper.toEntity(epicRequest)).thenReturn(epic);
                 when(epicRepository.save(epic)).thenReturn(epic);
                 when(epicMapper.toDto(epic)).thenReturn(epicResponse);
@@ -211,7 +217,7 @@ class ProductBacklogServiceImplTest {
                 // Initialize the userStories list in the product backlog as mutable
                 productBacklog.setUserStories(new ArrayList<>());
 
-                when(productBacklogRepository.findById(productBacklogId)).thenReturn(Optional.of(productBacklog));
+                when(productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId)).thenReturn(productBacklog);
                 when(userStoryMapper.toEntity(userStoryRequest)).thenReturn(userStory);
                 when(userStoryMapper.toResponse(userStory)).thenReturn(userStoryResponse);
 
@@ -242,7 +248,7 @@ class ProductBacklogServiceImplTest {
                 // Set the project directly on the product backlog
                 productBacklog.setProject(project);
 
-                when(productBacklogRepository.findById(productBacklogId)).thenReturn(Optional.of(productBacklog));
+                when(productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId)).thenReturn(productBacklog);
                 when(projectMapper.toResponse(project)).thenReturn(projectResponse);
 
                 // Act
@@ -260,7 +266,9 @@ class ProductBacklogServiceImplTest {
                 // Arrange
                 productBacklog.setProject(null); // Set the project to null directly
 
-                when(productBacklogRepository.findById(productBacklogId)).thenReturn(Optional.of(productBacklog));
+                when(productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId)).thenReturn(productBacklog);
+                doThrow(new ResourceNotFoundException("No project associated with this product backlog"))
+                                .when(productBacklogValidator).validateHasProject(productBacklog);
 
                 // Act & Assert
                 assertThrows(ResourceNotFoundException.class,

@@ -11,7 +11,8 @@ import ma.ensa.apms.repository.ProjectRepository;
 
 /**
  * Helper class for Project repository operations.
- * Provides centralized methods for retrieving projects with proper error handling.
+ * Provides centralized methods for retrieving projects with proper error
+ * handling.
  */
 @Component
 @AllArgsConstructor
