@@ -1,11 +1,15 @@
 package ma.ensa.apms.service.impl;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -115,7 +119,8 @@ class ProductBacklogServiceImplTest {
 
         @Test
         void testGetProductBacklogById_NotFound() {
-                when(productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId)).thenThrow(new ResourceNotFoundException("Product backlog not found"));
+                when(productBacklogRepositoryHelper.findByIdOrThrow(productBacklogId))
+                                .thenThrow(new ResourceNotFoundException("Product backlog not found"));
 
                 assertThrows(ResourceNotFoundException.class,
                                 () -> productBacklogService.getProductBacklogById(productBacklogId));
@@ -132,7 +137,8 @@ class ProductBacklogServiceImplTest {
 
         @Test
         void testDeleteProductBacklog_NotFound() {
-                doThrow(new ResourceNotFoundException("Product backlog not found")).when(productBacklogRepositoryHelper).validateExists(productBacklogId);
+                doThrow(new ResourceNotFoundException("Product backlog not found")).when(productBacklogRepositoryHelper)
+                                .validateExists(productBacklogId);
 
                 assertThrows(ResourceNotFoundException.class,
                                 () -> productBacklogService.deleteProductBacklog(productBacklogId));
