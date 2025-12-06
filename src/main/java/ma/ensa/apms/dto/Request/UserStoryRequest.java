@@ -1,5 +1,7 @@
 package ma.ensa.apms.dto.Request;
 
+import static ma.ensa.apms.validation.ValidationConstants.UserStory.*;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,22 +16,22 @@ import ma.ensa.apms.modal.enums.UserStoryStatus;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserStoryRequest {
-    @NotBlank(message = "Title cannot be blank")
-    @Size(min = 10, max = 100, message = "Title must be between 10 and 100 characters")
+    @NotBlank(message = NAME_BLANK_MESSAGE)
+    @Size(min = NAME_MIN_LENGTH, max = NAME_MAX_LENGTH, message = NAME_SIZE_MESSAGE)
     private String name;
 
-    @NotBlank(message = "Role cannot be blank")
+    @NotBlank(message = ROLE_BLANK_MESSAGE)
     private String role;
 
-    @NotBlank(message = "Feature cannot be blank")
+    @NotBlank(message = FEATURE_BLANK_MESSAGE)
     private String feature;
 
-    @NotBlank(message = "Benefit cannot be blank")
+    @NotBlank(message = BENEFIT_BLANK_MESSAGE)
     private String benefit;
 
-    @NotNull(message = "Priority is required")
+    @NotNull(message = PRIORITY_REQUIRED_MESSAGE)
     private int priority;
 
-    @NotNull(message = "Status is required")
+    @NotNull(message = STATUS_REQUIRED_MESSAGE)
     private UserStoryStatus status;
 }

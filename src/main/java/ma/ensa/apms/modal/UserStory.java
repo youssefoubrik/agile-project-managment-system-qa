@@ -1,5 +1,7 @@
 package ma.ensa.apms.modal;
 
+import static ma.ensa.apms.validation.ValidationConstants.UserStory.*;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,24 +40,24 @@ public class UserStory implements Serializable {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @NotBlank(message = "Title cannot be blank")
-    @Size(min = 10, max = 100, message = "Name must be between 10 and 100 characters")
+    @NotBlank(message = NAME_BLANK_MESSAGE)
+    @Size(min = NAME_MIN_LENGTH, max = NAME_MAX_LENGTH, message = NAME_SIZE_MESSAGE)
     private String name;
 
-    @NotBlank(message = "Role cannot be blank")
+    @NotBlank(message = ROLE_BLANK_MESSAGE)
     private String role;
 
-    @NotBlank(message = "Feature cannot be blank")
+    @NotBlank(message = FEATURE_BLANK_MESSAGE)
     private String feature;
 
-    @NotBlank(message = "Benefit cannot be blank")
+    @NotBlank(message = BENEFIT_BLANK_MESSAGE)
     private String benefit;
 
-    @NotNull(message = "Priority is required")
+    @NotNull(message = PRIORITY_REQUIRED_MESSAGE)
     private int priority;
 
     @Enumerated(EnumType.STRING)
-    @NotNull(message = "Status is required")
+    @NotNull(message = STATUS_REQUIRED_MESSAGE)
     private UserStoryStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)

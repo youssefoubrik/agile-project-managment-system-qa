@@ -1,5 +1,7 @@
 package ma.ensa.apms.modal;
 
+import static ma.ensa.apms.validation.ValidationConstants.Task.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -36,12 +38,11 @@ public class Task implements Serializable, DateRangeHolder {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @NotBlank(message = "Title cannot be blank")
-    @Size(max = 100, message = "Title cannot exceed 100 characters")
+    @NotBlank(message = TITLE_BLANK_MESSAGE)
+    @Size(min = TITLE_MIN_LENGTH, max = TITLE_MAX_LENGTH, message = TITLE_SIZE_MESSAGE)
     private String title;
 
-    @NotBlank(message = "Description cannot be blank")
-    @Size(max = 500, message = "Description cannot exceed 500 characters")
+    @NotBlank(message = DESCRIPTION_BLANK_MESSAGE)
     private String description;
 
     @Enumerated(EnumType.STRING)
