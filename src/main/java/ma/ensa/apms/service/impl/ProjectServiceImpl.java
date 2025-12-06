@@ -3,18 +3,15 @@ package ma.ensa.apms.service.impl;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import ma.ensa.apms.annotation.LogOperation;
 import ma.ensa.apms.dto.Request.ProjectRequest;
 import ma.ensa.apms.dto.Response.ProjectResponse;
-import ma.ensa.apms.exception.BusinessException;
 import ma.ensa.apms.exception.ResourceNotFoundException;
 import ma.ensa.apms.mapper.ProjectMapper;
 import ma.ensa.apms.modal.ProductBacklog;
@@ -23,6 +20,8 @@ import ma.ensa.apms.modal.enums.ProjectStatus;
 import ma.ensa.apms.repository.ProductBacklogRepository;
 import ma.ensa.apms.repository.ProjectRepository;
 import ma.ensa.apms.service.ProjectService;
+import ma.ensa.apms.service.helper.ProjectRepositoryHelper;
+import ma.ensa.apms.service.validator.ProjectValidator;
 
 @Service
 @AllArgsConstructor
@@ -30,6 +29,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectMapper projectMapper;
     private final ProductBacklogRepository productBacklogRepository;
+    private final ProjectRepositoryHelper projectRepositoryHelper;
+    private final ProjectValidator projectValidator;
 
     @Override
     @LogOperation(description = "Creating new project")
@@ -42,8 +43,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @LogOperation(description = "Updating project")
     public ProjectResponse updateProject(UUID id, ProjectRequest request) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+        Project project = projectRepositoryHelper.findByIdOrThrow(id);
         projectMapper.updateEntityFromRequest(request, project);
         project = projectRepository.save(project);
         return projectMapper.toResponse(project);
@@ -56,32 +56,25 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse updateProjectStartDate(UUID id, LocalDateTime startDate) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+        Project project = projectRepositoryHelper.findByIdOrThrow(id);
+        projectValidator.validateStartDate(startDate, project.getEndDate());
         project.setStartDate(startDate);
-        if (project.getEndDate() != null && project.getEndDate().isBefore(startDate)) {
-            throw new BusinessException("Start date must be before end date");
-        }
         project = projectRepository.save(project);
         return projectMapper.toResponse(project);
     }
 
     @Override
     public ProjectResponse updateProjectEndDate(UUID id, LocalDateTime endDate) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+        Project project = projectRepositoryHelper.findByIdOrThrow(id);
+        projectValidator.validateEndDate(project.getStartDate(), endDate);
         project.setEndDate(endDate);
-        if (project.getStartDate() != null && project.getStartDate().isAfter(endDate)) {
-            throw new BusinessException("End date must be after start date");
-        }
         project = projectRepository.save(project);
         return projectMapper.toResponse(project);
     }
 
     @Override
     public ProjectResponse updateProjectStatus(UUID id, ProjectStatus status) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+        Project project = projectRepositoryHelper.findByIdOrThrow(id);
         project.setStatus(status);
         project = projectRepository.save(project);
         return projectMapper.toResponse(project);
@@ -90,8 +83,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @LogOperation(description = "Getting project by ID")
     public ProjectResponse getProject(UUID id) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+        Project project = projectRepositoryHelper.findByIdOrThrow(id);
         return projectMapper.toResponse(project);
     }
 
@@ -100,7 +92,7 @@ public class ProjectServiceImpl implements ProjectService {
         return projectRepository.findAll(pageable)
                 .stream()
                 .map(projectMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -108,7 +100,7 @@ public class ProjectServiceImpl implements ProjectService {
         return projectRepository.findByStatus(status)
                 .stream()
                 .map(projectMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -116,18 +108,14 @@ public class ProjectServiceImpl implements ProjectService {
         return projectRepository.findByStartDateAfterAndEndDateBefore(startDate, endDate)
                 .stream()
                 .map(projectMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional
     public ProjectResponse assignProductBacklogToProject(UUID projectId, UUID productBacklogId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
-
-        if (project.getProductBacklog() != null) {
-            throw new IllegalStateException("This project already has a ProductBacklog assigned");
-        }
+        Project project = projectRepositoryHelper.findByIdOrThrow(projectId);
+        projectValidator.validateProductBacklogAssignment(project);
 
         ProductBacklog productBacklog = productBacklogRepository.findById(productBacklogId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product backlog not found"));

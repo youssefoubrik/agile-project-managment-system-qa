@@ -44,6 +44,12 @@ class ProjectServiceImplTest {
     @Mock
     private ProductBacklogRepository productBacklogRepository;
 
+    @Mock
+    private ma.ensa.apms.service.helper.ProjectRepositoryHelper projectRepositoryHelper;
+
+    @Mock
+    private ma.ensa.apms.service.validator.ProjectValidator projectValidator;
+
     @InjectMocks
     private ProjectServiceImpl projectService;
 
@@ -91,7 +97,7 @@ class ProjectServiceImplTest {
     @Test
     void updateProject_WhenProjectExists_ShouldUpdateProject() {
         // Arrange
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
         when(projectRepository.save(testProject)).thenReturn(testProject);
         when(projectMapper.toResponse(testProject)).thenReturn(testResponse);
 
@@ -100,7 +106,7 @@ class ProjectServiceImplTest {
 
         // Assert
         assertNotNull(result);
-        verify(projectRepository, times(1)).findById(testId);
+        verify(projectRepositoryHelper, times(1)).findByIdOrThrow(testId);
         verify(projectMapper, times(1)).updateEntityFromRequest(testRequest, testProject);
         verify(projectRepository, times(1)).save(testProject);
     }
@@ -108,7 +114,7 @@ class ProjectServiceImplTest {
     @Test
     void updateProject_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
-        when(projectRepository.findById(testId)).thenReturn(Optional.empty());
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.updateProject(testId, testRequest));
@@ -128,7 +134,7 @@ class ProjectServiceImplTest {
     void updateProjectStartDate_WithValidDate_ShouldUpdateStartDate() {
         // Arrange
         LocalDateTime newStartDate = LocalDateTime.now().minusDays(1);
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
         when(projectRepository.save(testProject)).thenReturn(testProject);
         when(projectMapper.toResponse(testProject)).thenReturn(testResponse);
 
@@ -145,7 +151,9 @@ class ProjectServiceImplTest {
     void updateProjectStartDate_WhenStartDateAfterEndDate_ShouldThrowException() {
         // Arrange
         LocalDateTime invalidStartDate = LocalDateTime.now().plusYears(1);
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
+        doThrow(new BusinessException("Start date must be before end date"))
+                .when(projectValidator).validateStartDate(invalidStartDate, testProject.getEndDate());
 
         // Act & Assert
         assertThrows(BusinessException.class, () -> projectService.updateProjectStartDate(testId, invalidStartDate));
@@ -156,7 +164,7 @@ class ProjectServiceImplTest {
     void updateProjectStartDate_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
         LocalDateTime newStartDate = LocalDateTime.now();
-        when(projectRepository.findById(testId)).thenReturn(Optional.empty());
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.updateProjectStartDate(testId, newStartDate));
@@ -166,7 +174,7 @@ class ProjectServiceImplTest {
     void updateProjectEndDate_WithValidDate_ShouldUpdateEndDate() {
         // Arrange
         LocalDateTime newEndDate = LocalDateTime.now().plusMonths(12);
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
         when(projectRepository.save(testProject)).thenReturn(testProject);
         when(projectMapper.toResponse(testProject)).thenReturn(testResponse);
 
@@ -183,7 +191,9 @@ class ProjectServiceImplTest {
     void updateProjectEndDate_WhenEndDateBeforeStartDate_ShouldThrowException() {
         // Arrange
         LocalDateTime invalidEndDate = LocalDateTime.now().minusYears(1);
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
+        doThrow(new BusinessException("End date must be after start date"))
+                .when(projectValidator).validateEndDate(testProject.getStartDate(), invalidEndDate);
 
         // Act & Assert
         assertThrows(BusinessException.class, () -> projectService.updateProjectEndDate(testId, invalidEndDate));
@@ -194,7 +204,7 @@ class ProjectServiceImplTest {
     void updateProjectEndDate_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
         LocalDateTime newEndDate = LocalDateTime.now().plusMonths(6);
-        when(projectRepository.findById(testId)).thenReturn(Optional.empty());
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.updateProjectEndDate(testId, newEndDate));
@@ -204,7 +214,7 @@ class ProjectServiceImplTest {
     void updateProjectStatus_ShouldUpdateStatus() {
         // Arrange
         ProjectStatus newStatus = ProjectStatus.COMPLETED;
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
         when(projectRepository.save(testProject)).thenReturn(testProject);
         when(projectMapper.toResponse(testProject)).thenReturn(testResponse);
 
@@ -221,7 +231,7 @@ class ProjectServiceImplTest {
     void updateProjectStatus_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
         ProjectStatus newStatus = ProjectStatus.COMPLETED;
-        when(projectRepository.findById(testId)).thenReturn(Optional.empty());
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.updateProjectStatus(testId, newStatus));
@@ -230,7 +240,7 @@ class ProjectServiceImplTest {
     @Test
     void getProject_WhenProjectExists_ShouldReturnProject() {
         // Arrange
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
         when(projectMapper.toResponse(testProject)).thenReturn(testResponse);
 
         // Act
@@ -239,13 +249,13 @@ class ProjectServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(testResponse.getId(), result.getId());
-        verify(projectRepository, times(1)).findById(testId);
+        verify(projectRepositoryHelper, times(1)).findByIdOrThrow(testId);
     }
 
     @Test
     void getProject_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
-        when(projectRepository.findById(testId)).thenReturn(Optional.empty());
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
         assertThrows(EntityNotFoundException.class, () -> projectService.getProject(testId));
@@ -315,7 +325,7 @@ class ProjectServiceImplTest {
         productBacklog.setId(productBacklogId);
         testProject.setProductBacklog(null);
 
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
         when(productBacklogRepository.findById(productBacklogId)).thenReturn(Optional.of(productBacklog));
         when(projectRepository.save(testProject)).thenReturn(testProject);
         when(projectMapper.toResponse(testProject)).thenReturn(testResponse);
@@ -333,10 +343,10 @@ class ProjectServiceImplTest {
     void assignProductBacklogToProject_WhenProjectNotFound_ShouldThrowException() {
         // Arrange
         UUID productBacklogId = UUID.randomUUID();
-        when(projectRepository.findById(testId)).thenReturn(Optional.empty());
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenThrow(new EntityNotFoundException("Project not found"));
 
         // Act & Assert
-        assertThrows(ResourceNotFoundException.class,
+        assertThrows(EntityNotFoundException.class,
                 () -> projectService.assignProductBacklogToProject(testId, productBacklogId));
         verify(projectRepository, never()).save(any());
     }
@@ -347,7 +357,7 @@ class ProjectServiceImplTest {
         UUID productBacklogId = UUID.randomUUID();
         testProject.setProductBacklog(null);
 
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
         when(productBacklogRepository.findById(productBacklogId)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -363,7 +373,9 @@ class ProjectServiceImplTest {
         ProductBacklog existingBacklog = new ProductBacklog();
         testProject.setProductBacklog(existingBacklog);
 
-        when(projectRepository.findById(testId)).thenReturn(Optional.of(testProject));
+        when(projectRepositoryHelper.findByIdOrThrow(testId)).thenReturn(testProject);
+        doThrow(new IllegalStateException("This project already has a ProductBacklog assigned"))
+                .when(projectValidator).validateProductBacklogAssignment(testProject);
 
         // Act & Assert
         assertThrows(IllegalStateException.class,
