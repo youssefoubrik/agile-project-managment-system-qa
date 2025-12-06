@@ -23,6 +23,50 @@ import ma.ensa.apms.service.UserStoryService;
 import ma.ensa.apms.service.helper.UserStoryRepositoryHelper;
 import ma.ensa.apms.service.validator.UserStoryValidator;
 
+/**
+ * Implémentation du service de gestion des User Stories.
+ * 
+ * <p>
+ * Cette classe implémente la logique métier pour toutes les opérations
+ * relatives aux User Stories.
+ * Elle coordonne les interactions entre le repository, les mappers, les
+ * validateurs et les helpers.
+ * </p>
+ * 
+ * <p>
+ * <b>Responsabilités principales:</b>
+ * </p>
+ * <ul>
+ * <li>Orchestration des opérations CRUD sur les User Stories</li>
+ * <li>Application des règles de validation métier</li>
+ * <li>Gestion des transitions de statut avec vérifications</li>
+ * <li>Coordination des relations avec Epics et Sprint Backlogs</li>
+ * <li>Transformation des entités en DTOs via les mappers</li>
+ * <li>Gestion transactionnelle des opérations de modification</li>
+ * </ul>
+ * 
+ * <p>
+ * <b>Composants injectés:</b>
+ * </p>
+ * <ul>
+ * <li><b>userStoryRepository:</b> Accès aux données des User Stories</li>
+ * <li><b>userStoryMapper:</b> Conversion entre entités et DTOs</li>
+ * <li><b>acceptanceCriteriaMapper:</b> Conversion des critères
+ * d'acceptation</li>
+ * <li><b>repositoryHelper:</b> Méthodes utilitaires de recherche avec gestion
+ * d'erreurs</li>
+ * <li><b>validator:</b> Validation des règles métier complexes</li>
+ * </ul>
+ * 
+ * @author APMS Team
+ * @version 1.0
+ * @since 1.0
+ * @see UserStoryService
+ * @see UserStoryRepository
+ * @see UserStoryMapper
+ * @see UserStoryValidator
+ * @see UserStoryRepositoryHelper
+ */
 @Service
 @RequiredArgsConstructor
 public class UserStoryServiceImpl implements UserStoryService {
