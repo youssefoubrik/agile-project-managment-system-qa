@@ -1,5 +1,24 @@
 package ma.ensa.apms.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import ma.ensa.apms.dto.Request.SprintBacklogRequest;
 import ma.ensa.apms.dto.Request.UserStoryRequest;
 import ma.ensa.apms.dto.Response.SprintBacklogResponse;
@@ -11,19 +30,7 @@ import ma.ensa.apms.modal.SprintBacklog;
 import ma.ensa.apms.modal.UserStory;
 import ma.ensa.apms.repository.SprintBacklogRepository;
 import ma.ensa.apms.repository.UserStoryRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import ma.ensa.apms.service.helper.SprintBacklogRepositoryHelper;
 
 class SprintBacklogServiceImplTest {
 
@@ -38,6 +45,9 @@ class SprintBacklogServiceImplTest {
 
     @Mock
     private UserStoryMapper userStoryMapper;
+
+    @Mock
+    private SprintBacklogRepositoryHelper sprintBacklogRepositoryHelper;
 
     @InjectMocks
     private SprintBacklogServiceImpl sprintBacklogService;
@@ -106,23 +116,24 @@ class SprintBacklogServiceImplTest {
 
     @Test
     void getSprintBacklogById_ShouldReturnSprintBacklogResponse_WhenFound() {
-        when(sprintBacklogRepository.findById(sprintBacklog.getId())).thenReturn(Optional.of(sprintBacklog));
+        when(sprintBacklogRepositoryHelper.findByIdOrThrow(sprintBacklog.getId())).thenReturn(sprintBacklog);
         when(sprintBacklogMapper.toResponse(sprintBacklog)).thenReturn(sprintBacklogResponse);
 
         SprintBacklogResponse result = sprintBacklogService.getSprintBacklogById(sprintBacklog.getId());
 
         assertNotNull(result);
         assertEquals(sprintBacklogResponse, result);
-        verify(sprintBacklogRepository, times(1)).findById(sprintBacklog.getId());
+        verify(sprintBacklogRepositoryHelper, times(1)).findByIdOrThrow(sprintBacklog.getId());
     }
 
     @Test
     void getSprintBacklogById_ShouldThrowException_WhenNotFound() {
-        when(sprintBacklogRepository.findById(sprintBacklog.getId())).thenReturn(Optional.empty());
+        when(sprintBacklogRepositoryHelper.findByIdOrThrow(sprintBacklog.getId()))
+                .thenThrow(new ResourceNotFoundException("SprintBacklog not found with id: " + sprintBacklog.getId()));
 
         assertThrows(ResourceNotFoundException.class,
                 () -> sprintBacklogService.getSprintBacklogById(sprintBacklog.getId()));
-        verify(sprintBacklogRepository, times(1)).findById(sprintBacklog.getId());
+        verify(sprintBacklogRepositoryHelper, times(1)).findByIdOrThrow(sprintBacklog.getId());
     }
 
     @Test
@@ -140,7 +151,7 @@ class SprintBacklogServiceImplTest {
 
     @Test
     void updateSprintBacklog_ShouldReturnUpdatedSprintBacklogResponse() {
-        when(sprintBacklogRepository.findById(sprintBacklog.getId())).thenReturn(Optional.of(sprintBacklog));
+        when(sprintBacklogRepositoryHelper.findByIdOrThrow(sprintBacklog.getId())).thenReturn(sprintBacklog);
         doNothing().when(sprintBacklogMapper).updateFromDto(sprintBacklogRequest, sprintBacklog);
         when(sprintBacklogRepository.save(sprintBacklog)).thenReturn(sprintBacklog);
         when(sprintBacklogMapper.toResponse(sprintBacklog)).thenReturn(sprintBacklogResponse);
@@ -150,32 +161,33 @@ class SprintBacklogServiceImplTest {
 
         assertNotNull(result);
         assertEquals(sprintBacklogResponse, result);
-        verify(sprintBacklogRepository, times(1)).findById(sprintBacklog.getId());
+        verify(sprintBacklogRepositoryHelper, times(1)).findByIdOrThrow(sprintBacklog.getId());
         verify(sprintBacklogRepository, times(1)).save(sprintBacklog);
     }
 
     @Test
     void deleteSprintBacklog_ShouldDeleteSprintBacklog_WhenFound() {
-        when(sprintBacklogRepository.existsById(sprintBacklog.getId())).thenReturn(true);
+        doNothing().when(sprintBacklogRepositoryHelper).validateExists(sprintBacklog.getId());
 
         sprintBacklogService.deleteSprintBacklog(sprintBacklog.getId());
 
-        verify(sprintBacklogRepository, times(1)).existsById(sprintBacklog.getId());
+        verify(sprintBacklogRepositoryHelper, times(1)).validateExists(sprintBacklog.getId());
         verify(sprintBacklogRepository, times(1)).deleteById(sprintBacklog.getId());
     }
 
     @Test
     void deleteSprintBacklog_ShouldThrowException_WhenNotFound() {
-        when(sprintBacklogRepository.existsById(sprintBacklog.getId())).thenReturn(false);
+        doThrow(new ResourceNotFoundException("SprintBacklog not found with id: " + sprintBacklog.getId()))
+                .when(sprintBacklogRepositoryHelper).validateExists(sprintBacklog.getId());
 
         assertThrows(ResourceNotFoundException.class,
                 () -> sprintBacklogService.deleteSprintBacklog(sprintBacklog.getId()));
-        verify(sprintBacklogRepository, times(1)).existsById(sprintBacklog.getId());
+        verify(sprintBacklogRepositoryHelper, times(1)).validateExists(sprintBacklog.getId());
     }
 
     @Test
     void addUserStoryToSprintBacklog_ShouldReturnCreatedUserStoryResponse() {
-        when(sprintBacklogRepository.findById(sprintBacklog.getId())).thenReturn(Optional.of(sprintBacklog));
+        when(sprintBacklogRepositoryHelper.findByIdOrThrow(sprintBacklog.getId())).thenReturn(sprintBacklog);
         when(userStoryMapper.toEntity(userStoryRequest)).thenReturn(userStory);
         when(userStoryRepository.save(userStory)).thenReturn(userStory);
         when(userStoryMapper.toResponse(userStory)).thenReturn(userStoryResponse);
@@ -190,8 +202,8 @@ class SprintBacklogServiceImplTest {
 
     @Test
     void removeUserStoryFromSprintBacklog_ShouldRemoveUserStory_WhenFound() {
-        when(sprintBacklogRepository.findById(sprintBacklog.getId())).thenReturn(Optional.of(sprintBacklog));
-        when(userStoryRepository.findById(userStory.getId())).thenReturn(Optional.of(userStory));
+        when(sprintBacklogRepositoryHelper.findByIdOrThrow(sprintBacklog.getId())).thenReturn(sprintBacklog);
+        when(sprintBacklogRepositoryHelper.findUserStoryByIdOrThrow(userStory.getId())).thenReturn(userStory);
         userStory.setSprintBacklog(sprintBacklog);
 
         sprintBacklogService.removeUserStoryFromSprintBacklog(sprintBacklog.getId(), userStory.getId());

@@ -10,8 +10,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 public class AgileProjectManagementSystemApplication {
-    /* 
-     * 
+    /*
+     * Result -> Backlog Expand - Backlog Notion - Docs Screenshots
      */
     public static void main(String[] args) {
         SpringApplication.run(AgileProjectManagementSystemApplication.class, args);

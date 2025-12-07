@@ -68,16 +68,6 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
         }
 
-        // @ExceptionHandler(BadCredentialsException.class)
-        // public ResponseEntity<ApiErrorResponse>
-        // handleBadCredentialsException(BadCredentialsException ex,
-        // WebRequest request) {
-        // ApiErrorResponse errorResponse =
-        // buildApiErrorResponse(HttpStatus.UNAUTHORIZED,
-        // "Incorrect username or password", request);
-        // return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
-        // }
-
         @ExceptionHandler(NoResourceFoundException.class)
         public ResponseEntity<ApiErrorResponse> handleNoResourceFoundException(NoResourceFoundException ex,
                         WebRequest request) {
@@ -123,10 +113,6 @@ public class GlobalExceptionHandler {
 
         private ApiErrorResponse buildApiErrorResponse(HttpStatus status, String message, WebRequest request) {
 
-                /*
-                 * the substring(4) is used to remove the "uri=" prefix from the request
-                 * description
-                 */
                 return ApiErrorResponse.builder()
                                 .timestamp(LocalDateTime.now())
                                 .status(status.value())

@@ -6,7 +6,6 @@ import ma.ensa.apms.dto.Request.SprintBacklogRequest;
 import ma.ensa.apms.dto.Request.UserStoryRequest;
 import ma.ensa.apms.dto.Response.SprintBacklogResponse;
 import ma.ensa.apms.dto.Response.UserStoryResponse;
-import ma.ensa.apms.exception.ResourceNotFoundException;
 import ma.ensa.apms.mapper.SprintBacklogMapper;
 import ma.ensa.apms.mapper.UserStoryMapper;
 import ma.ensa.apms.modal.SprintBacklog;
@@ -14,11 +13,11 @@ import ma.ensa.apms.modal.UserStory;
 import ma.ensa.apms.repository.SprintBacklogRepository;
 import ma.ensa.apms.repository.UserStoryRepository;
 import ma.ensa.apms.service.SprintBacklogService;
+import ma.ensa.apms.service.helper.SprintBacklogRepositoryHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +27,7 @@ public class SprintBacklogServiceImpl implements SprintBacklogService {
     private final SprintBacklogMapper sprintBacklogMapper;
     private final UserStoryMapper userStoryMapper;
     private final UserStoryRepository userStoryRepository;
+    private final SprintBacklogRepositoryHelper sprintBacklogRepositoryHelper;
 
     @Override
     @Transactional
@@ -39,8 +39,7 @@ public class SprintBacklogServiceImpl implements SprintBacklogService {
 
     @Override
     public SprintBacklogResponse getSprintBacklogById(UUID id) {
-        SprintBacklog sprintBacklog = sprintBacklogRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Sprint backlog not found"));
+        SprintBacklog sprintBacklog = sprintBacklogRepositoryHelper.findByIdOrThrow(id);
         return sprintBacklogMapper.toResponse(sprintBacklog);
     }
 
@@ -48,14 +47,13 @@ public class SprintBacklogServiceImpl implements SprintBacklogService {
     public List<SprintBacklogResponse> getAllSprintBacklogs() {
         return sprintBacklogRepository.findAll().stream()
                 .map(sprintBacklogMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional
     public SprintBacklogResponse updateSprintBacklog(UUID id, SprintBacklogRequest request) {
-        SprintBacklog sprintBacklog = sprintBacklogRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Sprint backlog not found"));
+        SprintBacklog sprintBacklog = sprintBacklogRepositoryHelper.findByIdOrThrow(id);
 
         sprintBacklogMapper.updateFromDto(request, sprintBacklog);
         SprintBacklog updatedSprintBacklog = sprintBacklogRepository.save(sprintBacklog);
@@ -65,28 +63,24 @@ public class SprintBacklogServiceImpl implements SprintBacklogService {
     @Override
     @Transactional
     public void deleteSprintBacklog(UUID id) {
-        if (!sprintBacklogRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Sprint backlog not found");
-        }
+        sprintBacklogRepositoryHelper.validateExists(id);
         sprintBacklogRepository.deleteById(id);
     }
 
     @Override
     @Transactional
     public List<UserStoryResponse> getUserStoriesBySprintBacklogId(UUID sprintBacklogId) {
-        SprintBacklog sprintBacklog = sprintBacklogRepository.findById(sprintBacklogId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sprint backlog not found"));
+        SprintBacklog sprintBacklog = sprintBacklogRepositoryHelper.findByIdOrThrow(sprintBacklogId);
 
         return sprintBacklog.getUserStories().stream()
                 .map(userStoryMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     @Transactional
     public UserStoryResponse addUserStoryToSprintBacklog(UUID sprintBacklogId, UserStoryRequest userStoryRequest) {
-        SprintBacklog sprintBacklog = sprintBacklogRepository.findById(sprintBacklogId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sprint backlog not found"));
+        SprintBacklog sprintBacklog = sprintBacklogRepositoryHelper.findByIdOrThrow(sprintBacklogId);
 
         UserStory userStory = userStoryMapper.toEntity(userStoryRequest);
         userStory.setSprintBacklog(sprintBacklog);
@@ -98,11 +92,9 @@ public class SprintBacklogServiceImpl implements SprintBacklogService {
     @Override
     @Transactional
     public void removeUserStoryFromSprintBacklog(UUID sprintBacklogId, UUID userStoryId) {
-        sprintBacklogRepository.findById(sprintBacklogId)
-                .orElseThrow(() -> new ResourceNotFoundException("Sprint backlog not found"));
+        sprintBacklogRepositoryHelper.validateExists(sprintBacklogId);
 
-        UserStory userStory = userStoryRepository.findById(userStoryId)
-                .orElseThrow(() -> new ResourceNotFoundException("User story not found"));
+        UserStory userStory = sprintBacklogRepositoryHelper.findUserStoryByIdOrThrow(userStoryId);
 
         if (!userStory.getSprintBacklog().getId().equals(sprintBacklogId)) {
             throw new IllegalArgumentException("User story does not belong to the specified sprint backlog");

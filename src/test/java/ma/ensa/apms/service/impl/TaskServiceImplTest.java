@@ -1,13 +1,17 @@
 package ma.ensa.apms.service.impl;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +41,12 @@ class TaskServiceImplTest {
 
     @Mock
     private TaskMapper taskMapper;
+
+    @Mock
+    private ma.ensa.apms.service.helper.TaskRepositoryHelper taskRepositoryHelper;
+
+    @Mock
+    private ma.ensa.apms.service.validator.TaskDateValidator taskDateValidator;
 
     @InjectMocks
     private TaskServiceImpl taskService;
@@ -122,7 +132,7 @@ class TaskServiceImplTest {
     @Test
     void getTaskById_WhenTaskExists_ShouldReturnTask() {
         // Arrange
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepositoryHelper.findByIdOrThrow(taskId)).thenReturn(task);
         when(taskMapper.toDto(task)).thenReturn(taskResponseDto);
 
         // Act
@@ -136,7 +146,8 @@ class TaskServiceImplTest {
     @Test
     void getTaskById_WhenTaskDoesNotExist_ShouldThrowException() {
         // Arrange
-        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+        when(taskRepositoryHelper.findByIdOrThrow(taskId))
+                .thenThrow(new ResourceNotFoundException("Task not found with id: " + taskId));
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> taskService.getTaskById(taskId));
@@ -175,7 +186,7 @@ class TaskServiceImplTest {
     @Test
     void updateTask_WhenTaskExists_ShouldUpdateTask() {
         // Arrange
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepositoryHelper.findByIdOrThrow(taskId)).thenReturn(task);
         when(taskMapper.toEntity(taskRequestDto)).thenReturn(task);
         when(taskRepository.save(task)).thenReturn(task);
         when(taskMapper.toDto(task)).thenReturn(taskResponseDto);
@@ -191,7 +202,8 @@ class TaskServiceImplTest {
     @Test
     void updateTask_WhenTaskDoesNotExist_ShouldThrowException() {
         // Arrange
-        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+        when(taskRepositoryHelper.findByIdOrThrow(taskId))
+                .thenThrow(new ResourceNotFoundException("Task not found with id: " + taskId));
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> taskService.updateTask(taskId, taskRequestDto));
@@ -203,7 +215,7 @@ class TaskServiceImplTest {
         TaskStatusUpdateDto statusDto = new TaskStatusUpdateDto();
         statusDto.setStatus(TaskStatus.IN_PROGRESS);
 
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepositoryHelper.findByIdOrThrow(taskId)).thenReturn(task);
         when(taskRepository.save(task)).thenReturn(task);
         when(taskMapper.toDto(task)).thenReturn(taskResponseDto);
 
@@ -222,7 +234,8 @@ class TaskServiceImplTest {
         LocalDateTime newStartDate = startDate.minusDays(1);
         startDateDto.setStartDate(newStartDate);
 
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepositoryHelper.findByIdOrThrow(taskId)).thenReturn(task);
+        doNothing().when(taskDateValidator).validateStartDate(newStartDate, task.getEndDate());
         when(taskRepository.save(task)).thenReturn(task);
         when(taskMapper.toDto(task)).thenReturn(taskResponseDto);
 
@@ -239,9 +252,12 @@ class TaskServiceImplTest {
     void updateTaskStartDate_WhenStartDateIsAfterEndDate_ShouldThrowException() {
         // Arrange
         TaskStartDateUpdateDto startDateDto = new TaskStartDateUpdateDto();
-        startDateDto.setStartDate(endDate.plusDays(1));
+        LocalDateTime invalidStartDate = endDate.plusDays(1);
+        startDateDto.setStartDate(invalidStartDate);
 
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepositoryHelper.findByIdOrThrow(taskId)).thenReturn(task);
+        doThrow(new BusinessException("Start date cannot be after the end date"))
+                .when(taskDateValidator).validateStartDate(invalidStartDate, task.getEndDate());
 
         // Act & Assert
         assertThrows(BusinessException.class, () -> taskService.updateTaskStartDate(taskId, startDateDto));
@@ -254,7 +270,8 @@ class TaskServiceImplTest {
         LocalDateTime newEndDate = endDate.plusDays(1);
         endDateDto.setEndDate(newEndDate);
 
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepositoryHelper.findByIdOrThrow(taskId)).thenReturn(task);
+        doNothing().when(taskDateValidator).validateEndDate(task.getStartDate(), newEndDate);
         when(taskRepository.save(task)).thenReturn(task);
         when(taskMapper.toDto(task)).thenReturn(taskResponseDto);
 
@@ -271,9 +288,12 @@ class TaskServiceImplTest {
     void updateTaskEndDate_WhenEndDateIsBeforeStartDate_ShouldThrowException() {
         // Arrange
         TaskEndDateUpdateDto endDateDto = new TaskEndDateUpdateDto();
-        endDateDto.setEndDate(startDate.minusDays(1));
+        LocalDateTime invalidEndDate = startDate.minusDays(1);
+        endDateDto.setEndDate(invalidEndDate);
 
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepositoryHelper.findByIdOrThrow(taskId)).thenReturn(task);
+        doThrow(new BusinessException("End date cannot be before the start date"))
+                .when(taskDateValidator).validateEndDate(task.getStartDate(), invalidEndDate);
 
         // Act & Assert
         assertThrows(BusinessException.class, () -> taskService.updateTaskEndDate(taskId, endDateDto));
@@ -282,7 +302,7 @@ class TaskServiceImplTest {
     @Test
     void deleteTask_WhenTaskExists_ShouldDeleteTask() {
         // Arrange
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskRepositoryHelper.findByIdOrThrow(taskId)).thenReturn(task);
         doNothing().when(taskRepository).delete(task);
 
         // Act
@@ -295,7 +315,8 @@ class TaskServiceImplTest {
     @Test
     void deleteTask_WhenTaskDoesNotExist_ShouldThrowException() {
         // Arrange
-        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+        when(taskRepositoryHelper.findByIdOrThrow(taskId))
+                .thenThrow(new ResourceNotFoundException("Task not found with id: " + taskId));
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> taskService.deleteTask(taskId));

@@ -97,7 +97,7 @@ public interface UserStoryService {
      * 
      * <p>
      * Permet de regrouper thématiquement les User Stories. La User Story doit être
-     * en statut TODO.
+     * en statut TO DO.
      * </p>
      * 
      * @param storyId l'identifiant de la User Story à lier
@@ -108,7 +108,7 @@ public interface UserStoryService {
      *                                                          trouvé
      * @throws ma.ensa.apms.exception.BusinessException         si la User Story
      *                                                          n'est pas en statut
-     *                                                          TODO
+     *                                                          TO DO
      */
     UserStoryResponse linkToEpic(UUID storyId, UUID epicId);
 

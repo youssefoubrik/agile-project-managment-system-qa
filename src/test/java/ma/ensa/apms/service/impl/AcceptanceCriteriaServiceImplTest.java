@@ -8,6 +8,7 @@ import ma.ensa.apms.mapper.AcceptanceCriteriaMapper;
 import ma.ensa.apms.modal.AcceptanceCriteria;
 import ma.ensa.apms.modal.UserStory;
 import ma.ensa.apms.repository.AcceptanceCriteriaRepository;
+import ma.ensa.apms.service.helper.AcceptanceCriteriaRepositoryHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,6 +32,9 @@ class AcceptanceCriteriaServiceImplTest {
 
     @Mock
     private AcceptanceCriteriaMapper acceptanceCriteriaMapper;
+
+    @Mock
+    private AcceptanceCriteriaRepositoryHelper acceptanceCriteriaRepositoryHelper;
 
     @InjectMocks
     private AcceptanceCriteriaServiceImpl acceptanceCriteriaService;
@@ -90,7 +93,7 @@ class AcceptanceCriteriaServiceImplTest {
     @Test
     void testFindById_ExistingId() {
         // Arrange
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id)).thenReturn(entity);
         when(acceptanceCriteriaMapper.toDto(entity)).thenReturn(responseDto);
 
         // Act
@@ -99,18 +102,19 @@ class AcceptanceCriteriaServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(id, result.getId());
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
         verify(acceptanceCriteriaMapper).toDto(entity);
     }
 
     @Test
     void testFindById_NonExistingId() {
         // Arrange
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.empty());
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id))
+                .thenThrow(new ResourceNotFoundException("AcceptanceCriteria not found with id: " + id));
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> acceptanceCriteriaService.findById(id));
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
     }
 
     @Test
@@ -151,7 +155,7 @@ class AcceptanceCriteriaServiceImplTest {
     @Test
     void testUpdate_ExistingId() {
         // Arrange
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id)).thenReturn(entity);
         doNothing().when(acceptanceCriteriaMapper).updateEntityFromDto(requestDto, entity);
         when(acceptanceCriteriaRepository.save(entity)).thenReturn(entity);
         when(acceptanceCriteriaMapper.toDto(entity)).thenReturn(responseDto);
@@ -162,7 +166,7 @@ class AcceptanceCriteriaServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(id, result.getId());
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
         verify(acceptanceCriteriaMapper).updateEntityFromDto(requestDto, entity);
         verify(acceptanceCriteriaRepository).save(entity);
         verify(acceptanceCriteriaMapper).toDto(entity);
@@ -171,36 +175,38 @@ class AcceptanceCriteriaServiceImplTest {
     @Test
     void testUpdate_NonExistingId() {
         // Arrange
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.empty());
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id))
+                .thenThrow(new ResourceNotFoundException("AcceptanceCriteria not found with id: " + id));
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> acceptanceCriteriaService.update(id, requestDto));
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
         verify(acceptanceCriteriaMapper, never()).updateEntityFromDto(any(), any());
     }
 
     @Test
     void testDelete_ExistingId() {
         // Arrange
-        when(acceptanceCriteriaRepository.existsById(id)).thenReturn(true);
+        doNothing().when(acceptanceCriteriaRepositoryHelper).validateExists(id);
         doNothing().when(acceptanceCriteriaRepository).deleteById(id);
 
         // Act
         acceptanceCriteriaService.delete(id);
 
         // Assert
-        verify(acceptanceCriteriaRepository).existsById(id);
+        verify(acceptanceCriteriaRepositoryHelper).validateExists(id);
         verify(acceptanceCriteriaRepository).deleteById(id);
     }
 
     @Test
     void testDelete_NonExistingId() {
         // Arrange
-        when(acceptanceCriteriaRepository.existsById(id)).thenReturn(false);
+        doThrow(new ResourceNotFoundException("AcceptanceCriteria not found with id: " + id))
+                .when(acceptanceCriteriaRepositoryHelper).validateExists(id);
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> acceptanceCriteriaService.delete(id));
-        verify(acceptanceCriteriaRepository).existsById(id);
+        verify(acceptanceCriteriaRepositoryHelper).validateExists(id);
         verify(acceptanceCriteriaRepository, never()).deleteById(any());
     }
 
@@ -208,7 +214,7 @@ class AcceptanceCriteriaServiceImplTest {
     void testUpdateMet_ExistingId() {
         // Arrange
         boolean newMetStatus = true;
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id)).thenReturn(entity);
         when(acceptanceCriteriaRepository.save(entity)).thenReturn(entity);
         when(acceptanceCriteriaMapper.toDto(entity)).thenReturn(responseDto);
 
@@ -217,7 +223,7 @@ class AcceptanceCriteriaServiceImplTest {
 
         // Assert
         assertNotNull(result);
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
         verify(acceptanceCriteriaRepository).save(entity);
         verify(acceptanceCriteriaMapper).toDto(entity);
     }
@@ -225,11 +231,12 @@ class AcceptanceCriteriaServiceImplTest {
     @Test
     void testUpdateMet_NonExistingId() {
         // Arrange
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.empty());
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id))
+                .thenThrow(new ResourceNotFoundException("AcceptanceCriteria not found with id: " + id));
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> acceptanceCriteriaService.updateMet(id, true));
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
         verify(acceptanceCriteriaRepository, never()).save(any());
     }
 
@@ -239,36 +246,37 @@ class AcceptanceCriteriaServiceImplTest {
         UserStory userStory = new UserStory();
         entity.setUserStory(userStory);
 
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id)).thenReturn(entity);
 
         // Act
         UserStoryResponse result = acceptanceCriteriaService.getUserStoryByAcceptanceCriteriaId(id);
 
         // Assert
         assertNotNull(result);
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
     }
 
     @Test
     void testGetUserStoryByAcceptanceCriteriaId_ExistingIdWithoutUserStory() {
         // Arrange
         entity.setUserStory(null);
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.of(entity));
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id)).thenReturn(entity);
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class,
                 () -> acceptanceCriteriaService.getUserStoryByAcceptanceCriteriaId(id));
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
     }
 
     @Test
     void testGetUserStoryByAcceptanceCriteriaId_NonExistingId() {
         // Arrange
-        when(acceptanceCriteriaRepository.findById(id)).thenReturn(Optional.empty());
+        when(acceptanceCriteriaRepositoryHelper.findByIdOrThrow(id))
+                .thenThrow(new ResourceNotFoundException("AcceptanceCriteria not found with id: " + id));
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class,
                 () -> acceptanceCriteriaService.getUserStoryByAcceptanceCriteriaId(id));
-        verify(acceptanceCriteriaRepository).findById(id);
+        verify(acceptanceCriteriaRepositoryHelper).findByIdOrThrow(id);
     }
 }

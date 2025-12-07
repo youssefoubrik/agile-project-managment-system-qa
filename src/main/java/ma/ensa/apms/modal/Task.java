@@ -43,7 +43,7 @@ import ma.ensa.apms.validation.StartEndDateValidator;
  * </p>
  * <ul>
  * <li>Possède un titre (3-100 caractères) et une description détaillée</li>
- * <li>Suit un cycle de vie avec différents statuts (TODO, IN_PROGRESS, DONE,
+ * <li>Suit un cycle de vie avec différents statuts (TO DO, IN_PROGRESS, DONE,
  * etc.)</li>
  * <li>Définit une période avec dates de début et fin</li>
  * <li>Appartient toujours à une User Story parent</li>

@@ -14,19 +14,21 @@ import ma.ensa.apms.dto.TaskRequestDto;
 import ma.ensa.apms.dto.TaskResponseDto;
 import ma.ensa.apms.dto.TaskStartDateUpdateDto;
 import ma.ensa.apms.dto.TaskStatusUpdateDto;
-import ma.ensa.apms.exception.BusinessException;
-import ma.ensa.apms.exception.ResourceNotFoundException;
 import ma.ensa.apms.mapper.TaskMapper;
 import ma.ensa.apms.modal.Task;
 import ma.ensa.apms.modal.enums.TaskStatus;
 import ma.ensa.apms.repository.TaskRepository;
 import ma.ensa.apms.service.TaskService;
+import ma.ensa.apms.service.helper.TaskRepositoryHelper;
+import ma.ensa.apms.service.validator.TaskDateValidator;
 
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
+    private final TaskRepositoryHelper taskRepositoryHelper;
+    private final TaskDateValidator taskDateValidator;
 
     @Override
     @Transactional
@@ -46,8 +48,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskResponseDto getTaskById(UUID id) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        Task task = taskRepositoryHelper.findByIdOrThrow(id);
         return taskMapper.toDto(task);
     }
 
@@ -70,8 +71,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponseDto updateTask(UUID id, TaskRequestDto taskDto) {
-        Task existingTask = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        Task existingTask = taskRepositoryHelper.findByIdOrThrow(id);
 
         Task updatedTask = taskMapper.toEntity(taskDto);
         updatedTask.setId(existingTask.getId());
@@ -82,8 +82,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponseDto updateTaskStatus(UUID id, TaskStatusUpdateDto statusDto) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        Task task = taskRepositoryHelper.findByIdOrThrow(id);
 
         task.setStatus(statusDto.getStatus());
         Task updatedTask = taskRepository.save(task);
@@ -93,15 +92,10 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponseDto updateTaskStartDate(UUID id, TaskStartDateUpdateDto startDateDto) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        Task task = taskRepositoryHelper.findByIdOrThrow(id);
 
         LocalDateTime newStartDate = startDateDto.getStartDate();
-
-        // Validate that new start date is not after existing end date
-        if (task.getEndDate() != null && newStartDate.isAfter(task.getEndDate())) {
-            throw new BusinessException("Start date cannot be after the end date");
-        }
+        taskDateValidator.validateStartDate(newStartDate, task.getEndDate());
 
         task.setStartDate(newStartDate);
         Task updatedTask = taskRepository.save(task);
@@ -111,14 +105,10 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponseDto updateTaskEndDate(UUID id, TaskEndDateUpdateDto endDateDto) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        Task task = taskRepositoryHelper.findByIdOrThrow(id);
 
         LocalDateTime newEndDate = endDateDto.getEndDate();
-
-        if (task.getStartDate() != null && newEndDate.isBefore(task.getStartDate())) {
-            throw new BusinessException("End date cannot be before the start date");
-        }
+        taskDateValidator.validateEndDate(task.getStartDate(), newEndDate);
 
         task.setEndDate(newEndDate);
         Task updatedTask = taskRepository.save(task);
@@ -128,9 +118,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void deleteTask(UUID id) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
-
+        Task task = taskRepositoryHelper.findByIdOrThrow(id);
         taskRepository.delete(task);
     }
 }

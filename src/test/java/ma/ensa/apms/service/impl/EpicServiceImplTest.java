@@ -5,7 +5,6 @@ import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -28,9 +27,10 @@ import ma.ensa.apms.modal.ProductBacklog;
 import ma.ensa.apms.modal.UserStory;
 import ma.ensa.apms.repository.EpicRepository;
 import ma.ensa.apms.repository.UserStoryRepository;
+import ma.ensa.apms.service.helper.EpicRepositoryHelper;
 
 @ExtendWith(MockitoExtension.class)
-public class EpicServiceImplTest {
+class EpicServiceImplTest {
 
     @Mock
     private EpicRepository epicRepository;
@@ -46,6 +46,9 @@ public class EpicServiceImplTest {
 
     @Mock
     private ProductBacklogMapper productBacklogMapper;
+
+    @Mock
+    private EpicRepositoryHelper epicRepositoryHelper;
 
     @InjectMocks
     private EpicServiceImpl epicService;
@@ -124,7 +127,8 @@ public class EpicServiceImplTest {
     @Test
     void testFindById() {
         // Setup
-        when(epicRepository.findById(epicId)).thenReturn(Optional.of(epic));
+        when(epicRepositoryHelper.findByIdOrThrow(epicId)).thenReturn(epic);
+        when(epicRepositoryHelper.getUserStoriesCount(epic)).thenReturn(1);
         when(epicMapper.toDto(epic)).thenReturn(epicResponse);
 
         // Execute
@@ -134,24 +138,26 @@ public class EpicServiceImplTest {
         assertNotNull(result);
         assertEquals(epicResponse, result);
         assertEquals(1, result.getUserStoriesCount());
-        verify(epicRepository).findById(epicId);
+        verify(epicRepositoryHelper).findByIdOrThrow(epicId);
         verify(epicMapper).toDto(epic);
     }
 
     @Test
     void testFindById_NotFound() {
         // Setup
-        when(epicRepository.findById(epicId)).thenReturn(Optional.empty());
+        when(epicRepositoryHelper.findByIdOrThrow(epicId))
+                .thenThrow(new ResourceNotFoundException("Epic not found with id: " + epicId));
 
         // Execute & Verify
         assertThrows(ResourceNotFoundException.class, () -> epicService.findById(epicId));
-        verify(epicRepository).findById(epicId);
+        verify(epicRepositoryHelper).findByIdOrThrow(epicId);
     }
 
     @Test
     void testFindAll() {
         // Setup
         when(epicRepository.findAll()).thenReturn(epicList);
+        when(epicRepositoryHelper.getUserStoriesCount(epic)).thenReturn(1);
         when(epicMapper.toDto(epic)).thenReturn(epicResponse);
 
         // Execute
@@ -167,7 +173,7 @@ public class EpicServiceImplTest {
     @Test
     void testUpdate() {
         // Setup
-        when(epicRepository.findById(epicId)).thenReturn(Optional.of(epic));
+        when(epicRepositoryHelper.findByIdOrThrow(epicId)).thenReturn(epic);
         when(epicRepository.save(epic)).thenReturn(epic);
         when(epicMapper.toDto(epic)).thenReturn(epicResponse);
 
@@ -177,7 +183,7 @@ public class EpicServiceImplTest {
         // Verify
         assertNotNull(result);
         assertEquals(epicResponse, result);
-        verify(epicRepository).findById(epicId);
+        verify(epicRepositoryHelper).findByIdOrThrow(epicId);
         verify(epicMapper).updateEntityFromDto(epicRequest, epic);
         verify(epicRepository).save(epic);
         verify(epicMapper).toDto(epic);
@@ -186,21 +192,21 @@ public class EpicServiceImplTest {
     @Test
     void testDelete() {
         // Setup
-        when(epicRepository.findById(epicId)).thenReturn(Optional.of(epic));
+        when(epicRepositoryHelper.findByIdOrThrow(epicId)).thenReturn(epic);
 
         // Execute
         epicService.delete(epicId);
 
         // Verify
-        verify(epicRepository).findById(epicId);
+        verify(epicRepositoryHelper).findByIdOrThrow(epicId);
         verify(epicRepository).delete(epic);
     }
 
     @Test
     void testAddUserStoryToEpic() {
         // Setup
-        when(epicRepository.findById(epicId)).thenReturn(Optional.of(epic));
-        when(userStoryRepository.findById(userStoryId)).thenReturn(Optional.of(userStory));
+        when(epicRepositoryHelper.findByIdOrThrow(epicId)).thenReturn(epic);
+        when(epicRepositoryHelper.findUserStoryByIdOrThrow(userStoryId)).thenReturn(userStory);
         when(epicMapper.toDto(epic)).thenReturn(epicResponse);
 
         // Execute
@@ -209,8 +215,8 @@ public class EpicServiceImplTest {
         // Verify
         assertNotNull(result);
         assertEquals(epicResponse, result);
-        verify(epicRepository).findById(epicId);
-        verify(userStoryRepository).findById(userStoryId);
+        verify(epicRepositoryHelper).findByIdOrThrow(epicId);
+        verify(epicRepositoryHelper).findUserStoryByIdOrThrow(userStoryId);
         verify(userStoryRepository).save(userStory);
         verify(epicMapper).toDto(epic);
         assertEquals(epic, userStory.getEpic());
@@ -219,7 +225,7 @@ public class EpicServiceImplTest {
     @Test
     void testGetUserStoriesByEpicId() {
         // Setup
-        when(epicRepository.findById(epicId)).thenReturn(Optional.of(epic));
+        when(epicRepositoryHelper.findByIdOrThrow(epicId)).thenReturn(epic);
         when(userStoryMapper.toResponse(userStory)).thenReturn(userStoryResponse);
 
         // Execute
@@ -228,14 +234,14 @@ public class EpicServiceImplTest {
         // Verify
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(epicRepository).findById(epicId);
+        verify(epicRepositoryHelper).findByIdOrThrow(epicId);
         verify(userStoryMapper).toResponse(userStory);
     }
 
     @Test
     void testGetProductBacklogByEpicId() {
         // Setup
-        when(epicRepository.findById(epicId)).thenReturn(Optional.of(epic));
+        when(epicRepositoryHelper.findByIdOrThrow(epicId)).thenReturn(epic);
         when(productBacklogMapper.toResponse(productBacklog)).thenReturn(productBacklogResponse);
 
         // Execute
@@ -244,7 +250,7 @@ public class EpicServiceImplTest {
         // Verify
         assertNotNull(result);
         assertEquals(productBacklogResponse, result);
-        verify(epicRepository).findById(epicId);
+        verify(epicRepositoryHelper).findByIdOrThrow(epicId);
         verify(productBacklogMapper).toResponse(productBacklog);
     }
 
@@ -254,12 +260,12 @@ public class EpicServiceImplTest {
         Epic epicWithoutBacklog = new Epic();
         epicWithoutBacklog.setId(epicId);
 
-        when(epicRepository.findById(epicId)).thenReturn(Optional.of(epicWithoutBacklog));
+        when(epicRepositoryHelper.findByIdOrThrow(epicId)).thenReturn(epicWithoutBacklog);
 
         // Execute & Verify
         assertThrows(ResourceNotFoundException.class,
                 () -> epicService.getProductBacklogByEpicId(epicId));
-        verify(epicRepository).findById(epicId);
+        verify(epicRepositoryHelper).findByIdOrThrow(epicId);
     }
 
     @Test

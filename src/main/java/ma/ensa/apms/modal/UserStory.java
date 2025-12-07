@@ -46,7 +46,7 @@ import ma.ensa.apms.modal.enums.UserStoryStatus;
  * <li>Décrit une fonctionnalité du point de vue utilisateur avec rôle, feature
  * et bénéfice</li>
  * <li>Possède une priorité pour le tri dans le backlog</li>
- * <li>Suit un cycle de vie avec différents statuts (TODO, IN_PROGRESS, DONE,
+ * <li>Suit un cycle de vie avec différents statuts (TO DO, IN_PROGRESS, DONE,
  * etc.)</li>
  * <li>Peut appartenir à un Epic pour regroupement thématique</li>
  * <li>Peut être assignée à un Sprint Backlog pour planification</li>
