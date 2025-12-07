@@ -21,6 +21,6 @@ import ma.ensa.apms.modal.ProductBacklog;
  * @see ProductBacklog
  */
 @Repository
-public interface ProductBacklogRepository extends JpaRepository<ProductBacklog, UUID> { 
-    
+public interface ProductBacklogRepository extends JpaRepository<ProductBacklog, UUID> {
+
 }

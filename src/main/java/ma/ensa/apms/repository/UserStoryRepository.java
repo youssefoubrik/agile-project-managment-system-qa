@@ -26,18 +26,20 @@ import ma.ensa.apms.modal.enums.UserStoryStatus;
  */
 @Repository
 public interface UserStoryRepository extends JpaRepository<UserStory, UUID> {
-    
+
     /**
-     * Vérifie l'existence d'une User Story avec un nom donné dans un Product Backlog.
+     * Vérifie l'existence d'une User Story avec un nom donné dans un Product
+     * Backlog.
      * 
-     * @param name le nom de la User Story
+     * @param name             le nom de la User Story
      * @param productBacklogId l'identifiant du Product Backlog
      * @return true si une User Story existe avec ce nom dans ce backlog
      */
     boolean existsByNameAndProductBacklogId(String name, UUID productBacklogId);
 
     /**
-     * Recherche les User Stories d'un Product Backlog triées par priorité croissante.
+     * Recherche les User Stories d'un Product Backlog triées par priorité
+     * croissante.
      * 
      * @param productBacklogId l'identifiant du Product Backlog
      * @return liste des User Stories triées par priorité
@@ -47,7 +49,7 @@ public interface UserStoryRepository extends JpaRepository<UserStory, UUID> {
     /**
      * Recherche les User Stories par statut dans un Product Backlog donné.
      * 
-     * @param status le statut recherché
+     * @param status           le statut recherché
      * @param productBacklogId l'identifiant du Product Backlog
      * @return liste des User Stories correspondantes
      */

@@ -23,7 +23,7 @@ import ma.ensa.apms.modal.AcceptanceCriteria;
  */
 @Repository
 public interface AcceptanceCriteriaRepository extends JpaRepository<AcceptanceCriteria, UUID> {
-    
+
     /**
      * Recherche les critères d'acceptation selon leur état (satisfait ou non).
      * 

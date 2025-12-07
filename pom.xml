@@ -27,25 +27,41 @@
 	<version>
 		0.0.1-SNAPSHOT
 	</version>
-	<name>
-		Agile Project Management System
-	</name>
+	<name>Agile Project Management System</name>
 	<description>
-		Agile Project Management System
+		APMS is a comprehensive Agile Project Management System built with Spring Boot.
+		It provides complete support for managing projects using Agile methodologies,
+		including Epics, User Stories, Tasks, Product Backlogs, Sprint Backlogs,
+		and Acceptance Criteria. The system follows clean architecture principles
+		with proper separation of concerns and comprehensive test coverage.
 	</description>
-	<url />
+	<url>https://github.com/youssefoubrik/agile-project-managment-system-qa</url>
+
 	<licenses>
-		<license />
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+			<distribution>repo</distribution>
+		</license>
 	</licenses>
-	<developers>
-		<developer />
-	</developers>
+
+
 	<scm>
-		<connection />
-		<developerConnection />
-		<tag />
-		<url />
+		<connection>scm:git:git://github.com/youssefoubrik/agile-project-managment-system-qa.git</connection>
+		<developerConnection>scm:git:ssh://github.com:youssefoubrik/agile-project-managment-system-qa.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/youssefoubrik/agile-project-managment-system-qa</url>
 	</scm>
+
+	<organization>
+		<name>ENSA Agadir</name>
+		<url>http://www.ensa-agadir.ac.ma/</url>
+	</organization>
+
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/youssefoubrik/agile-project-managment-system-qa/issues</url>
+	</issueManagement>
 	<properties>
 		<java.version>
 			17
@@ -326,28 +342,99 @@
 				<artifactId>sonar-maven-plugin</artifactId>
 				<version>3.10.0.2594</version>
 			</plugin>
-			<!-- Javadoc Plugin to generate documentation -->
+			<!-- Javadoc Plugin to generate comprehensive API documentation -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.6.3</version>
 				<configuration>
+					<!-- Display settings -->
 					<show>public</show>
-					<nohelp>true</nohelp>
+					<nohelp>false</nohelp>
+					<author>true</author>
+					<version>true</version>
+
+					<!-- Encoding settings -->
 					<encoding>UTF-8</encoding>
 					<docencoding>UTF-8</docencoding>
 					<charset>UTF-8</charset>
+
+					<!-- Documentation metadata -->
+					<doctitle>Agile Project Management System (APMS) API Documentation</doctitle>
+					<windowtitle>APMS API ${project.version}</windowtitle>
+					<header><![CDATA[<b>APMS ${project.version}</b>]]></header>
+					<bottom><![CDATA[<b>APMS ${project.version}</b> - ENSA<br/>Copyright &#169; 2025 ENSA. All Rights Reserved.]]></bottom>
+
+					<!-- Package groups for better organization -->
+					<groups>
+						<group>
+							<title>Core Domain Model</title>
+							<packages>ma.ensa.apms.modal:ma.ensa.apms.modal.enums</packages>
+						</group>
+						<group>
+							<title>REST API Controllers</title>
+							<packages>ma.ensa.apms.controller</packages>
+						</group>
+						<group>
+							<title>Business Services</title>
+							<packages>ma.ensa.apms.service:ma.ensa.apms.service.impl</packages>
+						</group>
+						<group>
+							<title>Service Helpers &amp; Validators</title>
+							<packages>ma.ensa.apms.service.helper:ma.ensa.apms.service.validator</packages>
+						</group>
+						<group>
+							<title>Data Access Layer</title>
+							<packages>ma.ensa.apms.repository</packages>
+						</group>
+						<group>
+							<title>DTOs &amp; Mappers</title>
+							<packages>
+								ma.ensa.apms.dto:ma.ensa.apms.dto.Request:ma.ensa.apms.dto.Response:ma.ensa.apms.mapper</packages>
+						</group>
+						<group>
+							<title>Exception Handling</title>
+							<packages>ma.ensa.apms.exception:ma.ensa.apms.advice</packages>
+						</group>
+						<group>
+							<title>Validation &amp; Aspects</title>
+							<packages>
+								ma.ensa.apms.validation:ma.ensa.apms.aspect:ma.ensa.apms.annotation</packages>
+						</group>
+						<group>
+							<title>Configuration &amp; Utilities</title>
+							<packages>ma.ensa.apms.config:ma.ensa.apms.logging</packages>
+						</group>
+					</groups>
+
+					<!-- Error handling -->
 					<doclint>none</doclint>
 					<failOnError>false</failOnError>
+					<failOnWarnings>false</failOnWarnings>
+					<quiet>false</quiet>
+
+					<!-- Additional options -->
 					<additionalOptions>
 						<additionalOption>-Xdoclint:none</additionalOption>
+						<additionalOption>--allow-script-in-comments</additionalOption>
 					</additionalOptions>
+
+					<!-- Source files to include -->
+					<sourcepath>${project.basedir}/src/main/java</sourcepath>
+					<subpackages>ma.ensa.apms</subpackages>
 				</configuration>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
 						<goals>
 							<goal>jar</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>generate-javadocs</id>
+						<phase>package</phase>
+						<goals>
+							<goal>javadoc</goal>
 						</goals>
 					</execution>
 				</executions>

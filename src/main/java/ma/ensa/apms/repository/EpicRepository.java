@@ -23,9 +23,10 @@ import ma.ensa.apms.modal.Epic;
  */
 @Repository
 public interface EpicRepository extends JpaRepository<Epic, UUID> {
-    
+
     /**
-     * Recherche les Epics dont le nom contient le mot-clé spécifié (insensible à la casse).
+     * Recherche les Epics dont le nom contient le mot-clé spécifié (insensible à la
+     * casse).
      * 
      * @param keyword le mot-clé à rechercher dans le nom
      * @return liste des Epics correspondants

@@ -26,7 +26,7 @@ import ma.ensa.apms.modal.enums.TaskStatus;
  */
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
-    
+
     /**
      * Recherche les tâches par statut.
      * 
@@ -39,7 +39,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
      * Recherche les tâches dont les dates se situent dans une plage donnée.
      * 
      * @param startDate date de début minimale
-     * @param endDate date de fin maximale
+     * @param endDate   date de fin maximale
      * @return liste des tâches correspondantes
      */
     List<Task> findByStartDateGreaterThanEqualAndEndDateLessThanEqual(LocalDateTime startDate, LocalDateTime endDate);
